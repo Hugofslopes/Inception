@@ -1,15 +1,34 @@
-# Use the official NGINX image as a base
-FROM nginx:latest
+FROM debian:bullseye
 
-# Install OpenSSL to ensure TLSv1.3 support
-RUN apt-get update && apt-get install -y openssl
+EXPOSE 443
 
-# Copy the custom NGINX configuration file into the container
-COPY nginx.conf /etc/nginx/nginx.conf
+ARG	CERT_FOLDER=/etc/nginx/certs/
+ARG	CERTIFICATE=/etc/nginx/certs/certificate.crt
+ARG	KEY=/etc/nginx/certs/certificate.key
+ARG	COUNTRY=PT
+ARG	STATE=PT
+ARG	LOCALITY=Porto
+ARG	ORGANIZATION=42
+ARG	UNIT=42
+ARG	COMMON_NAME=hfilipe-.42.fr
 
-# Copy your SSL certificate and key into the container
-COPY ssl/certificate.crt /etc/ssl/certs/
-COPY ssl/private.key /etc/ssl/private/
+RUN apt-get update && \
+    apt-get install -y nginx openssl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Expose ports 80 and 443
-EXPOSE 80 443
+RUN	mkdir -p ${CERT_FOLDER} && \
+	openssl req -newkey rsa:4096 -x509 -sha256 -days 365 -nodes \
+	-out ${CERTIFICATE} \
+	-keyout ${KEY} \
+	-subj "/C=${COUNTRY}/ST=${STATE}/L=${LOCALITY}/O=${ORGANIZATION}/OU=${UNIT}/CN=${COMMON_NAME}"
+
+COPY	conf/nginx.conf	/etc/nginx/
+COPY	conf/server.conf /etc/nginx/conf.d/
+
+RUN	mkdir -p /var/www/
+RUN	chown -R www-data:www-data /var/www/
+
+CMD	["nginx", "-g", "daemon off;"]
+
+

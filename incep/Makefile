@@ -1,5 +1,4 @@
-
-DC=docker-compose
+DC=docker compose
 YML=srcs/docker-compose.yml
 
 all: build up
