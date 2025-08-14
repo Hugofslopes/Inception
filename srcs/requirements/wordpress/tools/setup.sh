@@ -1,33 +1,24 @@
 #!/bin/bash
 
-# Read secrets from Docker secrets files
-if [ -f /run/secrets/wp_admin_password ]; then
-    WP_ADMIN_PASSWORD=$(cat /run/secrets/wp_admin_password)
-else
-    echo "ERROR: Missing wp_admin_password secret!"
-    exit 1
-fi
+mkdir /var/www/inception/secrects
+cp /run/secrets/* /var/www/inception/secrects
 
-if [ -f /run/secrets/wp_user_password ]; then
-    WP_PASSWORD=$(cat /run/secrets/wp_user_password)
-else
-    echo "ERROR: Missing wp_user_password secret!"
-    exit 1
-fi
+export WP_ADMIN_PASSWORD="$(cat /run/secrets/wp_admin_password)"
+export WP_PASSWORD="$(cat /run/secrets/wp_user_password)"
+export WP_ADMIN_USER="$(cat /run/secrets/wp_admin)"
+export WP_USER="$(cat /var/www/inception/secrects/wp_user)"
 
-# At this point, WP_PATH, WP_URL, WP_TITLE, WP_ADMIN_USER, etc.
-# should already be set as environment variables by Docker from .env or docker-compose
+mv -f /tmp/wp-config.php "$WP_PATH/"
 
-if ! grep -q "wp-settings.php" "$WP_PATH/wp-config.php" 2>/dev/null; then
-    mv -f /tmp/wp-config.php "$WP_PATH/"
-fi
-
+# Download WordPress core if not already present
 if [ ! -f "$WP_PATH/wp-load.php" ]; then
     wp --allow-root --path="$WP_PATH" core download
 fi
 
+# Set correct permissions
 chown -R www-data:www-data "$WP_PATH"
 
+# Install WordPress if not already installed
 if ! wp --allow-root --path="$WP_PATH" core is-installed; then
     wp --allow-root --path="$WP_PATH" core install \
         --url="$WP_URL" \
@@ -37,6 +28,7 @@ if ! wp --allow-root --path="$WP_PATH" core is-installed; then
         --admin_email="$WP_ADMIN_EMAIL"
 fi
 
+# Create additional user if not already present
 if ! wp --allow-root --path="$WP_PATH" user get "$WP_USER" >/dev/null 2>&1; then
     wp --allow-root --path="$WP_PATH" user create \
         "$WP_USER" "$WP_EMAIL" \
@@ -44,6 +36,8 @@ if ! wp --allow-root --path="$WP_PATH" user get "$WP_USER" >/dev/null 2>&1; then
         --role="$WP_ROLE"
 fi
 
+# Install and activate theme
 wp --allow-root --path="$WP_PATH" theme install raft --activate
 
+# Hand off to container's CMD
 exec "$@"

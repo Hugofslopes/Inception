@@ -3,9 +3,7 @@ FROM debian:bullseye
 EXPOSE 9000
 
 ARG PHPPATH=/etc/php/8.2/fpm
-ARG PHP_VERSION_ENV=8.2make
-
-ENV DEBIAN_FRONTEND=noninteractive
+ARG PHP_VERSION_ENV=8.2
 
 # Install PHP 8.2 from Sury repository
 RUN apt update && \
@@ -33,12 +31,9 @@ RUN apt update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy configuration and setup files
-COPY conf/www.conf ${PHPPATH}/pool.d/
-COPY conf/wp-config.php /tmp/
-COPY tools/setup.sh /root/
-
-# Prepare setup script
-RUN sed -i 's/\r$//' /root/setup.sh && chmod +x /root/setup.sh
+COPY conf/www.conf ${PHPPATH}/pool.d/www.conf
+COPY conf/wp-config.php /tmp/wp-config.php
+COPY tools/setup.sh /root/setup.sh
 
 # Configure PHP-FPM
 RUN sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' ${PHPPATH}/php.ini && \

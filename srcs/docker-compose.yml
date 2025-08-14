@@ -1,21 +1,18 @@
-
 services:
 
   mariadb:
     container_name: mariadb
-    build: 
-      context: ./requirements/mariadb/
-      args:
-        DB_NAME: ${DB_NAME}
-        DB_USER: ${DB_USER}
-    image:  mariadb
+    build: ./requirements/mariadb/
+    image: mariadb
     volumes:
       - database:/var/lib/mysql/
     secrets:
       - db_password
       - db_root_password
+      - db_user
+      - db_name
     networks:
-      - all
+      - inception
     init: true
     restart: on-failure
     env_file:
@@ -26,9 +23,9 @@ services:
     build: ./requirements/wordpress/
     image: wordpress
     volumes:
-      - wordpress_files:/var/www/inception/
+      - wordpress:/var/www/inception/
     networks:
-      - all
+      - inception
     init: true
     restart: on-failure
     env_file:
@@ -37,8 +34,12 @@ services:
       - mariadb
     secrets:
       - db_password
+      - db_user
+      - db_name
       - wp_user_password
       - wp_admin_password
+      - wp_admin
+      - wp_user
 
   nginx:
     container_name: nginx
@@ -58,9 +59,9 @@ services:
     ports:
       - '443:443'
     volumes:
-      - wordpress_files:/var/www/inception/
+      - wordpress:/var/www/inception/
     networks:
-      - all
+      - inception
     init: true
     restart: on-failure
     env_file:
@@ -76,7 +77,7 @@ volumes:
       o: bind
       device: /home/hfilipe-/data/database
 
-  wordpress_files:
+  wordpress:
     driver: local
     driver_opts:
       type: none
@@ -84,15 +85,23 @@ volumes:
       device: /home/hfilipe-/data/wordpress_files
 
 networks:
-  all:
+  inception:
     driver: bridge
 
 secrets:
-  db_password:
-    file: ../secrets/db_password.txt
-  db_root_password:
-    file: ../secrets/db_root_password.txt
+  wp_user:
+    file: ../../secrets/wp_user.txt
   wp_user_password:
-    file: ../secrets/wp_user_password.txt
+    file: ../../secrets/wp_user_password.txt
+  wp_admin:
+    file: ../../secrets/wp_admin.txt
   wp_admin_password:
-    file: ../secrets/wp_admin_password.txt
+    file: ../../secrets/wp_admin_password.txt
+  db_user:
+    file: ../../secrets/db_user.txt
+  db_password:
+    file: ../../secrets/db_password.txt
+  db_name:
+    file: ../../secrets/db_name.txt
+  db_root_password:
+    file: ../../secrets/db_root_password.txt

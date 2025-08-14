@@ -2,15 +2,15 @@ FROM debian:bullseye
 
 EXPOSE 443
 
-ARG	CERT_FOLDER=/etc/nginx/certs/
-ARG	CERTIFICATE=/etc/nginx/certs/certificate.crt
-ARG	KEY=/etc/nginx/certs/certificate.key
-ARG	COUNTRY=PT
-ARG	STATE=PT
-ARG	LOCALITY=Porto
-ARG	ORGANIZATION=42
-ARG	UNIT=42
-ARG	COMMON_NAME=hfilipe-.42.fr
+ARG CERT_FOLDER
+ARG CERTIFICATE
+ARG KEY
+ARG COUNTRY
+ARG STATE
+ARG LOCALITY
+ARG ORGANIZATION
+ARG UNIT
+ARG COMMON_NAME
 
 RUN apt-get update && \
     apt-get install -y nginx openssl && \
@@ -30,5 +30,3 @@ RUN	mkdir -p /var/www/
 RUN	chown -R www-data:www-data /var/www/
 
 CMD	["nginx", "-g", "daemon off;"]
-
-
